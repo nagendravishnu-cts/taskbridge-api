@@ -1,10 +1,8 @@
-# Copilot Instructions for TaskBridge
+## Techonology Stack and description
 
-## What We're Building
+TaskBridge is a project collaboration platform with two main services: one handles projects, the other handles notifications and audit logging. We use Node.js with TypeScript, Express for the API, and PostgreSQL for data storage
 
-TaskBridge is a project collaboration platform with two main services: one handles projects, the other handles notifications and audit logging. We use Node.js with TypeScript, Express for the API, and PostgreSQL for data storage with TypeORM to manage it.
-
-## How We Organize Code
+## Architecture
 
 Every service follows the same structure:
 - Controller handles the HTTP request and response
@@ -20,7 +18,7 @@ Write everything in TypeScript. Use clear function names. Every function should 
 
 ## Security Rules
 
-Every user belongs to an organisation. When someone asks for data, check that they belong to that organisation first. Never let someone see another organisation's data. Audit logs should never be deleted or changed - they're permanent records. If the code needs to capture IP addresses, save them separately with a deletion date.
+Every user belongs to an organisation. When someone asks for data, check that they belong to that organisation first. Never let someone see another organisation's data. Audit logs should never be deleted or changed  they're permanent records.
 
 ## Testing
 
