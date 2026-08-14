@@ -2,80 +2,329 @@
 
 This document records all prompts used to build the Notification & Audit Service and supporting documentation, including the prompting techniques applied and how Copilot output was modified.
 
+---
+
 ## Prompt Chain Execution
 
 ### Prompt 1: Generate Project Service (Low-Effort, Unreviewed)
-**Executed**: Section 2 - Project Service Generation  
-**Copilot Feature Used**: Copilot Chat - Ask Mode  
-**Exact Prompt Text**:
-```
+
+**Executed:** Section 2 - Project Service Generation  
+**Copilot Feature Used:** Copilot Chat - Ask Mode
+
+**Exact Prompt Text**
+
+```text
 Generate a Project model and a Project service with create, update status, get by team, and delete functions. Use a database.
 ```
 
-**Prompting Technique**: Minimal specification (intentionally low-effort to simulate contractor code)  
-**Rationale**: This prompt deliberately avoids security details, architectural specifics, and validation requirements to generate code similar to what a rushed contractor would produce. This tests our code review and remediation capabilities.
+**Prompting Technique:** Minimal specification (intentionally low-effort to simulate contractor code)
 
-**Copilot Response**: Generated two files - Project.ts model and ProjectService.ts  
-**Issues Found**: (See REVIEW.md for detailed analysis)
+**Rationale:** This prompt deliberately avoids security details, architectural specifics, and validation requirements to generate code similar to what a rushed contractor would produce. This tests our code review and remediation capabilities.
+
+**Copilot Response:** Generated Project model and ProjectService files.
+
+**Issues Found:**
 - No organisation ID filtering (multi-tenant isolation missing)
 - No input validation
-- Delete function has no safeguards
 - No error handling
-- Missing TypeScript types in places
-- No audit logging
+- Missing authorization checks
+- Delete operation permanently removed records
+- No logging
 
-**Post-Generation Corrections**: Full remediation documented in REVIEW.md
-
----
-
-## Prompt Techniques Reference
-
-| Technique | Definition | Used In |
-|-----------|-----------|---------|
-| **Specificity** | Providing detailed context and requirements | Prompts 2+ (not in Prompt 1) |
-| **Decomposition** | Breaking large problems into smaller steps | SPEC.md generation |
-| **Few-shot** | Providing examples of desired output format | Test generation prompts |
-| **Constraint-based** | Explicitly stating what code must/must not do | Audit Service generation |
-| **Role-based** | Assigning Copilot a role/persona | Service remediation |
-| **Iterative refinement** | Refining output through multiple turns | Throughout |
+**Post-Generation Corrections:** Full remediation documented in REVIEW.md.
 
 ---
 
-## Post-Generation Corrections
+### Prompt 2: Create Technical Specification
 
-### Prompt 1 Corrections (Project Service)
+**Executed:** Section A - SPEC.md Creation  
+**Copilot Feature Used:** Ask Mode
 
-**File**: `src/projects/models/Project.ts`  
-**What Was Wrong**: Model had no organisation ID field, timestamp fields missing, no immutability constraints  
-**How Fixed**: Added `organisationId`, `createdAt`, `updatedAt`, `isDeleted` fields, added database constraints  
+**Exact Prompt Text**
 
-**File**: `src/projects/services/ProjectService.ts`  
-**What Was Wrong**: No organisation filtering in queries, no input validation, delete function deletes permanently without audit  
-**How Fixed**: Added organisationId parameter to all methods, added Zod validation, implemented soft delete with audit logging, added error handling  
+```text
+Act as a senior software architect.
 
-**Pattern**: Copilot generated code that works in isolation but fails security review in multi-tenant context. This required human judgment to catch.
+Based on the following requirements, create a technical specification for a Notification & Audit Service.
+
+Requirements:
+- Record immutable audit logs for project lifecycle changes
+- Generate notifications for all project team members
+- Support querying audit history by project ID
+- Filter by date range and event type
+- Enforce multi-tenant organisation isolation
+- Use layered architecture
+
+Provide:
+1. Data models with field types
+2. API contracts
+3. Validation rules
+4. Security requirements
+5. Integration points with Project Service
+```
+
+**Prompting Technique:** Role-Based + Specificity
+
+**Rationale:** Defined a senior architect role and supplied detailed requirements to generate structured technical documentation.
+
+**Copilot Response:** Generated a specification draft containing entities, APIs, and service responsibilities.
+
+**Post-Generation Corrections:**
+- Added audit immutability requirements.
+- Expanded authorization rules.
+- Added tenant isolation constraints.
+- Added compliance considerations.
 
 ---
 
-## Prompt Execution Progress
+### Prompt 3: Review AI-Generated Project Service
 
-- [x] Prompt 1: Low-effort Project Service generation
-- [ ] Prompt 2: SPEC.md technical specification
-- [ ] Prompt 3: Audit Service core logic
-- [ ] Prompt 4: Notification Service logic
-- [ ] Prompt 5: Test case generation
-- [ ] Prompt 6: IMPACT_ANALYSIS.md for scope change
+**Executed:** Section B - Code Review
+
+**Copilot Feature Used:** Ask Mode + #file
+
+**Exact Prompt Text**
+
+```text
+Review #file:ProjectService.ts as a senior security engineer.
+
+Identify:
+- Security issues
+- Multi-tenant isolation risks
+- Architecture violations
+- Performance concerns
+- Validation issues
+
+For each issue provide:
+- Severity
+- Impact
+- Recommended fix
+```
+
+**Prompting Technique:** Role-Based
+
+**Rationale:** Focused Copilot on security and architecture analysis before remediation.
+
+**Copilot Response:** Identified validation and architectural weaknesses.
+
+**Post-Generation Corrections:**
+- Discovered missing organisation filtering.
+- Added SaaS-specific security concerns.
+- Added authorization review findings.
+- Documented AI blind spots.
 
 ---
 
+### Prompt 4: Remediate Project Service
 
+**Executed:** Section B - Project Service Rewrite
 
-This document will be updated after each Copilot interaction to maintain a complete record of:
-1. What was prompted
-2. Which Copilot feature was used
-3. Which prompting technique was applied
-4. What Copilot generated
-5. What required human correction
-6. Why the correction was needed
+**Copilot Feature Used:** Agent Mode
 
-All corrections reflect cases where Copilot's output was incomplete, insecure, or inappropriate for production use.
+**Exact Prompt Text**
+
+```text
+Refactor the Project Service to production standards.
+
+Requirements:
+- Layered architecture
+  - Model
+  - Repository
+  - Service
+  - Controller
+- TypeORM repositories only
+- No database logic in services
+- Multi-tenant organisation filtering
+- Zod validation
+- Structured logging
+- Typed request and response contracts
+- Error handling
+- TypeScript strict mode
+
+Generate all required files.
+```
+
+**Prompting Technique:** Constraint-Based + Specificity
+
+**Rationale:** Required coordinated generation across multiple files while enforcing architectural standards.
+
+**Copilot Response:** Generated model, repository, service, controller, DTO, and validation layers.
+
+**Post-Generation Corrections:**
+- Improved exception handling.
+- Added audit event publishing.
+- Added service authorization checks.
+- Improved logging detail.
+
+---
+
+### Prompt 5: Build Audit Service
+
+**Executed:** Section C - Audit Service Implementation
+
+**Copilot Feature Used:** Agent Mode + @workspace
+
+**Exact Prompt Text**
+
+```text
+Using @workspace context, generate an Audit Service.
+
+Requirements:
+- Audit entries are immutable
+- Store actor user ID and organisation ID
+- Store previous state and new state snapshots
+- Support filtering by project ID, event type, and date range
+- Repository pattern
+- TypeORM
+- Structured logging
+- DTO validation
+
+Do not generate update or delete operations.
+```
+
+**Prompting Technique:** Constraint-Based
+
+**Rationale:** Explicit constraints ensured audit logs remained immutable.
+
+**Copilot Response:** Generated Audit entity, repository, service, controller, and DTOs.
+
+**Post-Generation Corrections:**
+- Added tenant filtering.
+- Strengthened validation.
+- Added custom exception handling.
+
+---
+
+### Prompt 6: Build Notification Service
+
+**Executed:** Section C - Notification Service Implementation
+
+**Copilot Feature Used:** Agent Mode
+
+**Exact Prompt Text**
+
+```text
+Generate a Notification Service integrated with the existing Project and Audit services.
+
+Requirements:
+- Create notifications on project create
+- Create notifications on status update
+- Create notifications on delete
+- Notify all assigned team members
+- Allow unread notification retrieval
+- Allow marking notifications as read
+
+Follow requirements from .github/copilot-instructions.md
+```
+
+**Prompting Technique:** Specificity + Context Referencing
+
+**Rationale:** Reused project-wide instructions to maintain consistency.
+
+**Copilot Response:** Generated service, repository, controller, and notification entity.
+
+**Post-Generation Corrections:**
+- Added authorization rules.
+- Fixed recipient filtering.
+- Added notification templates.
+
+---
+
+### Prompt 7: Generate Unit Tests
+
+**Executed:** Section C - Test Development
+
+**Copilot Feature Used:** /tests
+
+**Exact Prompt Text**
+
+```text
+/tests
+
+Generate Jest unit tests for:
+- Notification dispatch to all project members
+- Audit creation
+- Audit immutability
+- Date range filtering
+- Event type filtering
+- Multi-tenant authorization
+
+Use existing service contracts and repositories.
+```
+
+**Prompting Technique:** Few-Shot + Constraint-Based
+
+**Rationale:** Directed Copilot toward assessment-specific requirements.
+
+**Copilot Response:** Generated initial set of Jest test cases.
+
+**Post-Generation Corrections:**
+- Added negative test cases.
+- Added unauthorized-access tests.
+- Added validation error scenarios.
+- Increased coverage for edge cases.
+
+---
+
+### Prompt 8: Generate Impact Analysis
+
+**Executed:** Scope Change Analysis
+
+**Copilot Feature Used:** Ask Mode
+
+**Exact Prompt Text**
+
+```text
+Analyze the impact of introducing a new event type called MILESTONE_REOPENED.
+
+Additional requirement:
+Audit entries must capture the actor IP address.
+
+Identify:
+- Affected modules
+- Database changes
+- API changes
+- Migration requirements
+- Security implications
+- Compliance considerations
+- Testing requirements
+```
+
+**Prompting Technique:** Decomposition
+
+**Rationale:** Broke a large impact analysis task into smaller areas.
+
+**Copilot Response:** Identified data model, API, repository, and testing changes.
+
+**Post-Generation Corrections:**
+- Added privacy implications.
+- Added IP address retention recommendations.
+- Added deployment sequencing.
+- Added tenant-isolation impact analysis.
+
+---
+
+### Prompt 9: Generate Documentation
+
+**Executed:** Documentation Phase
+
+**Copilot Feature Used:** /doc
+
+**Exact Prompt Text**
+
+```text
+/doc
+
+Generate documentation comments for all public methods in:
+- ProjectService
+- AuditService
+- NotificationService
+
+Include parameters, return values, exceptions, and security considerations.
+```
+
+**Prompting Technique:** Specificity
+
+**Rationale:** Improved maintainability and consistency of generated code.
+
+**Copilot Response:** Generated 
