@@ -68,7 +68,7 @@ Generate a Project model and a Project service with create, update status, get b
 
 ---
 
-## Notes for Assessment
+
 
 This document will be updated after each Copilot interaction to maintain a complete record of:
 1. What was prompted
